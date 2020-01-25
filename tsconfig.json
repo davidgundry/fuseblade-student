@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "outDir": "./dist/",
+      "noImplicitAny": false,
+      "module": "es6",
+      "target": "es2015",
+      "allowJs": true,
+      "sourceMap": true,
+      "baseUrl": "src",
+      "removeComments": true,
+      "preserveConstEnums": true,
+      "types": ["jest", "node"],
+      "typeRoots": ["./types", "./node_modules/@types"]
+    },
+    "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"],
+    "include": ["./src/**/*.tsx", "./src/**/*.ts"]
+}
