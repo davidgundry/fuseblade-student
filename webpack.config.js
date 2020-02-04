@@ -42,4 +42,5 @@ module.exports = {
             safari10: false}})],
         },
     mode: "development",
+    target: "node"
 };
