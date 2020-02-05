@@ -1,4 +1,5 @@
 export declare class WorldObjectData {
+    typeID: number;
     uid: number;
     x: number;
     y: number;

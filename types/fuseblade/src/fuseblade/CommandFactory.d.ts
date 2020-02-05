@@ -1,6 +1,6 @@
 import { FBActions } from "./FBActions";
 import { CommandFactory as CommandFactoryInterface } from "server/CommandFactory";
-import { FBCommand } from "./FBCommand";
+import { Command } from "server/Command";
 export declare class CommandFactory implements CommandFactoryInterface<FBActions> {
     private _currentClient;
     private _currentTeam;
@@ -8,6 +8,6 @@ export declare class CommandFactory implements CommandFactoryInterface<FBActions
     constructor();
     setClient(clientID: number): void;
     setTeam(teamID: number): void;
-    getCommand(t: FBActions, agentID?: number): FBCommand;
+    getCommand(t: FBActions): Command<FBActions>;
     getCommandList(): number[];
 }

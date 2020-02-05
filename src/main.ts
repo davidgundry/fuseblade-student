@@ -1,21 +1,15 @@
-const fb = require('../../fuseblade-server/dist/fusebladeServer')
-
-import { MyRandomAIClient } from "MyRandomAIClient";
-import { NodeServer, FBScenario} from "../types/fuseblade/index";
-
+const sf = require('../../fuseblade-server/dist/fusebladeServer')
 //const fs = require('fs') // Must put target:node in webpack.config.js instead
+import { MyRandomAIClient } from "MyRandomAIClient";
+import ScenarioFactory from "types/fuseblade/index";
+import { defaultSaveData } from "../../fuseblade-server/src/fuseblade/FBSaveData";
 
-let scenario = new fb.FPScenario()
-scenario.addAITeam(new MyRandomAIClient());
+let factory: ScenarioFactory = new sf.default()
+let scenario = factory.createFusebladeScenario(defaultSaveData);
+while(!scenario.ready)
+    scenario.addAITeam(new MyRandomAIClient());
 
 if (typeof window === 'undefined')
-{
-    let server: NodeServer = new fb.NodeServer();
-    server.loadScenario(scenario);
-    if (server.run())
-        server.saveState();
-    else
-        throw new Error("Scenario not ready: have you loaded enough AIs?");
-}
+    scenario.runHeadless();
 else //if (scenario instanceof FBScenario)
     window["FBScenario"] = scenario;

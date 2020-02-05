@@ -1,6 +1,6 @@
-import { ScenarioData, ScenarioSaveData, AIClient, GameModel, CommandFactory, Command } from "../types/fuseblade/index"
+import { ScenarioData, AIClient, GameModel, CommandFactory, Command } from "../types/fuseblade/index"
 
-export class MyRandomAIClient<D extends ScenarioData<S>, S extends ScenarioSaveData, C> implements AIClient<D,S,C>
+export class MyRandomAIClient<D extends ScenarioData<S>, S, C> implements AIClient<D,S,C>
 {
     private _gameModel: GameModel<D, S, C>;
 
@@ -14,7 +14,7 @@ export class MyRandomAIClient<D extends ScenarioData<S>, S extends ScenarioSaveD
         let list = this._gameModel.stateActionMapping(data);
         if (list.length > 0)
         {
-            let id = Math.round(Math.random() * list.length-1)
+            let id = Math.abs(Math.round(Math.random() * list.length-1));
             return commandFactory.getCommand(list[id]);
         }
         return null;

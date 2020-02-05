@@ -1,4 +1,5 @@
 export declare class TeamData {
+    teamID: number;
     currentAgents: number;
     movesMade: number;
     resource: number;
