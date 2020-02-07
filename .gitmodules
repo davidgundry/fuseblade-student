@@ -1,0 +1,3 @@
+[submodule "lib/fuseblade"]
+	path = lib/fuseblade
+	url = https://github.com/davidgundry/fuseblade-lib.git
