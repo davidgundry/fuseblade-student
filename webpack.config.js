@@ -1,10 +1,11 @@
 var path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry:
     {
-        main: "./src/main.ts"
+        ai: "./src/main.ts"
     },
     devtool: 'inline-source-map',
     module: {
@@ -24,7 +25,11 @@ module.exports = {
         filename: "[name].js",
         path: path.resolve(__dirname, 'dist')
     },
-    plugins: [],
+    plugins: [
+        new CopyWebpackPlugin([
+            { from: './lib/fuseblade/static' }
+        ]),
+    ],
     optimization: {
         minimizer: [new TerserPlugin({terserOptions: {
             ecma: undefined,

@@ -5,6 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Firefox",
+            "type": "firefox",
+            "request": "launch",
+            "url": "http://localhost:8080/",
+            "webRoot": "${workspaceFolder}"
+        },
+       /* {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chromium",
+            "url": "http://localhost:8080?debug=true&frame=play",
+            "webRoot": "${workspaceFolder}",
+            "runtimeExecutable": "/usr/bin/chromium"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
@@ -14,8 +29,8 @@
             "program": "${workspaceFolder}/src/main.ts",
             "preLaunchTask": "build",
             "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ]
-        }
+           *///     "${workspaceFolder}/dist/**/*.js"
+        //    ]
+       // }
     ]
 }

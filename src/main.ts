@@ -1,8 +1,8 @@
-const sf = require('../../fuseblade-server/dist/fusebladeServer')
+const sf = require("../lib/fuseblade/fuseblade");
 //const fs = require('fs') // Must put target:node in webpack.config.js instead
 import { MyRandomAIClient } from "MyRandomAIClient";
-import ScenarioFactory from "types/fuseblade/index";
-import { defaultSaveData } from "../../fuseblade-server/src/fuseblade/FBSaveData";
+import ScenarioFactory from "../lib/fuseblade/gameserver/index";
+import { defaultSaveData } from "../lib/fuseblade/defaultSaveData";
 
 let factory: ScenarioFactory = new sf.default()
 let scenario = factory.createFusebladeScenario(defaultSaveData);
