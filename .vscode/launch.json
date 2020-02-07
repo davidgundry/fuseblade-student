@@ -26,7 +26,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/src/main.ts",
+            "program": "${workspaceFolder}/src/node.ts",
             "preLaunchTask": "build",
             "outFiles": [
            *///     "${workspaceFolder}/dist/**/*.js"
