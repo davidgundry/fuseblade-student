@@ -10,8 +10,8 @@
       "removeComments": true,
       "preserveConstEnums": true,
       "types": ["jest", "node"],
-      "typeRoots": ["./types", "./node_modules/@types", ""]
+      "typeRoots": ["./types", "./node_modules/@types"]
     },
     "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"],
-    "include": ["./src/**/*.tsx", "./src/**/*.ts", "types/fuseblade/index.d.ts", "types/fuseblade/index.d.ts", "lib/index.d.ts", "lib/index.ts"]
+    "include": ["./src/**/*.tsx", "./src/**/*.ts", "lib/index.d.ts", "lib/index.ts"]
 }

@@ -1,16 +1,16 @@
-import * as GameServer from "../lib/fuseblade/gameserver/index"
+import { ScenarioData, AIClient, GameModel, CommandFactory, Command } from "../lib/fuseblade/gameserver/index";
 
-export class MyRandomAIClient<D extends GameServer.ScenarioData<S>, S, C> implements GameServer.AIClient<D,S,C>
+export class MyRandomAIClient<D extends ScenarioData<S>, S, C> implements AIClient<D,S,C>
 {
-    private _gameModel: GameServer.GameModel<D, S, C>;
+    private _gameModel: GameModel<D, S, C>;
 
-    create(clientID: number, teamID: number, gameModel: GameServer.GameModel<D,S,C>): void
+    create(clientID: number, teamID: number, gameModel: GameModel<D,S,C>): void
     {
         this._gameModel = gameModel;
         console.log("AI created");
     }
 
-    update<C>(data: D, commandFactory: GameServer.CommandFactory<C>): GameServer.Command<C>[] | GameServer.Command<C>
+    update<C>(data: D, commandFactory: CommandFactory<C>): Command<C>[] | Command<C>
     {
         let list = this._gameModel.stateActionMapping(data);
         if (list.length > 0)
