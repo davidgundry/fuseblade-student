@@ -1,5 +1,5 @@
-import { FBScenarioData } from "../lib/fuseblade/gamemodel/FBScenarioData";
-import { AgentData } from "../lib/fuseblade/gamemodel/AgentData";
+import { FBScenarioData } from "../lib/fuseblade/gamemodel/data/FBScenarioData";
+import { AgentData } from "../lib/fuseblade/gamemodel/data/AgentData";
 import { FBCommandFactory } from "../lib/fuseblade/gamemodel/FBCommandFactory";
 
 export interface AIBehaviour

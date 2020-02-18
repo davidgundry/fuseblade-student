@@ -1,12 +1,12 @@
-import { AIBehaviour } from "./AIBehaviour";
-import { TurretBehaviour } from "./TurretBehaviour";
 import { AIClient, Command } from "../lib/fuseblade/gameserver/index";
-import { FBScenarioData } from "../lib/fuseblade/gamemodel/FBScenarioData";
-import { FBSaveData } from "../lib/fuseblade/gamemodel/FBSaveData";
-import { FBGameModel } from "../lib/fuseblade/gamemodel/FBGameModel";
-import { TeamData } from "../lib/fuseblade/gamemodel/TeamData";
+import { FBScenarioData } from "../lib/fuseblade/gamemodel/data/FBScenarioData";
+import { FBSaveData } from "../lib/fuseblade/gamemodel/save/FBSaveData";
+import { FBActions } from "../lib/fuseblade/gamemodel/FBActions";
+import { FBGameModel } from "../lib/fuseblade/gamemodel/model/FBGameModel";
+import { AIBehaviour } from "AIBehaviour";
+import { TeamData } from "../lib/fuseblade/gamemodel/data/TeamData";
+import { TurretBehaviour } from "TurretBehaviour";
 import { FBCommandFactory } from "../lib/fuseblade/gamemodel/FBCommandFactory";
-import { FBActions } from "FBActions";
 
 export class BehaviourAI implements AIClient<FBScenarioData,FBSaveData,FBActions>
 {

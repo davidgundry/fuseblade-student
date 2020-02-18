@@ -1,10 +1,10 @@
 import { AIBehaviour } from "AIBehaviour";
-import { FBScenarioData } from "../lib/fuseblade/gamemodel/FBScenarioData";
-import { AgentData } from "../lib/fuseblade/gamemodel/AgentData";
-import { FBCommand } from "../lib/fuseblade/gamemodel/FBCommand";
-import ProjectileData from "../lib/fuseblade/gamemodel/ProjectileData";
+import { FBScenarioData } from "../lib/fuseblade/gamemodel/data/FBScenarioData";
+import { AgentData } from "../lib/fuseblade/gamemodel/data/AgentData";
 import { FBCommandFactory } from "../lib/fuseblade/gamemodel/FBCommandFactory";
+import { FBCommand } from "../lib/fuseblade/gamemodel/FBCommand";
 import { FBActions } from "FBActions";
+import ProjectileData from "../lib/fuseblade/gamemodel/data/ProjectileData";
 
 export class TurretBehaviour implements AIBehaviour
 {
