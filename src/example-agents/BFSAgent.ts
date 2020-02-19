@@ -1,11 +1,12 @@
-import { AIClient } from "../lib/fuseblade/gameserver/index";
-import { FBScenarioData } from "../lib/fuseblade/gamemodel/data/FBScenarioData";
-import { FBSaveData } from "../lib/fuseblade/gamemodel/save/FBSaveData";
-import { FBActions } from "../lib/fuseblade/gamemodel/FBActions";
-import { FBGameModel } from "../lib/fuseblade/gamemodel/model/FBGameModel";
-import { FBCommandFactory } from "../lib/fuseblade/gamemodel/FBCommandFactory";
-import { FloorType } from "../lib/fuseblade/gamemodel/data/FloorType";
-import { FBCommand } from "../lib/fuseblade/gamemodel/FBCommand";
+import { AIClient } from "../../lib/fuseblade/gameserver/index";
+import { FBScenarioData } from "../../lib/fuseblade/gamemodel/data/FBScenarioData";
+import { FBSaveData } from "../../lib/fuseblade/gamemodel/save/FBSaveData";
+import { FBActions } from "../enums/FBActions";
+import { FBGameModel } from "../../lib/fuseblade/gamemodel/model/FBGameModel";
+import { FBCommandFactory } from "../../lib/fuseblade/gamemodel/FBCommandFactory";
+import { FloorType } from "../enums/FloorType";
+import { FBCommand } from "../../lib/fuseblade/gamemodel/FBCommand";
+import { AgentData } from "../../lib/fuseblade/gamemodel/data/AgentData";
 
 /**
  * The beginnings of a breadth-first search agent which plans a path to the player
@@ -18,6 +19,8 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
 {
     private _team: number;
     private _pathfindingDone: boolean = false;
+    private _plan: GridPos[];
+    private _planIndex: number;
 
     /**
      * The create function is called when the scenario is created, and supplies some
@@ -47,20 +50,79 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
      */
     update(data: FBScenarioData, commandFactory: FBCommandFactory, delta: number): FBCommand[] | FBCommand
     {
+        let me = data.teams[this._team].agents[0];
+
         if (!this._pathfindingDone)
         {
-            let me = data.teams[this._team].agents[0];
             let target = data.player();
             let currentPos = new GridPos(Math.floor(me.x),Math.floor(me.y),Math.floor(me.z));
             let goal = new GridPos(Math.floor(target.x),Math.floor(target.y),Math.floor(target.z));
             console.log("Pathfinding from", currentPos, "to", goal)
             let directions = this._breadthFirstSearch(currentPos, goal, data.map);
-            console.log(directions)
+            this._plan = this._createPlan(directions, currentPos, goal)
+            console.log(this._plan)
+            this._planIndex = this._plan.length-1;
         }
         this._pathfindingDone = true;
+
+        if (this._planIndex > -1)
+        {
+            let mDistanceToPoint = Math.abs(me.x - this._plan[this._planIndex].x) +  Math.abs(me.y - this._plan[this._planIndex].y)
+            if (mDistanceToPoint > 0.1)
+                return this._moveTowardsPoint(me, this._plan[this._planIndex], commandFactory);
+            else
+            {
+                this._planIndex--;
+                console.log("moving to", this._plan[this._planIndex]);
+            }
+        }
+        else
+        {
+            this._pathfindingDone = false;
+        }
         return null;
     }
     
+    private _moveTowardsPoint(me: AgentData, point: GridPos, commandFactory: FBCommandFactory)
+    {
+        let moves: Array<FBCommand> = [];
+        if (me.x < point.x)
+            moves.push(commandFactory.getCommand(FBActions.AgentMoveEast))
+        else if (me.x > point.x)
+            moves.push(commandFactory.getCommand(FBActions.AgentMoveWest))
+        if (me.y < point.y)
+            moves.push(commandFactory.getCommand(FBActions.AgentMoveSouth))
+        else if (me.y > point.y)
+            moves.push(commandFactory.getCommand(FBActions.AgentMoveNorth))
+        return moves;
+    }
+
+    private _createPlan(directions: MoveDirections[], start: GridPos, goal: GridPos): GridPos[]
+    {
+        let plan = [];
+        plan.push(goal);
+        plan.push(this._localise(goal));
+        for (let i=0;i<directions.length;i++)
+        {
+            let last = plan[plan.length-1];
+            if (directions[i] === MoveDirections.Up)
+                plan.push(new GridPos(last.x, last.y+1, last.z));
+            if (directions[i] === MoveDirections.Down)
+                plan.push(new GridPos(last.x, last.y-1, last.z));
+            if (directions[i] === MoveDirections.Left)
+                plan.push(new GridPos(last.x+1, last.y, last.z));
+            if (directions[i] === MoveDirections.Right)
+                plan.push(new GridPos(last.x-1, last.y, last.z));
+        }
+        plan.push(this._localise(start))
+        return plan;
+    }
+
+    private _localise(pos: GridPos): GridPos
+    {
+        return new GridPos(Math.floor(pos.x)+0.5, Math.floor(pos.y)+0.5, pos.z)
+    }
+
     scenarioEnded(data: FBScenarioData): void {}
 
     /**
@@ -152,11 +214,24 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
      */
     private _stateActionMapping(map: FloorType[][][], state: GridPos): MoveDirections[]
     {
-        //TODO: check map and return only available moves
-        return [MoveDirections.Up,
-            MoveDirections.Down,
-            MoveDirections.Left,
-            MoveDirections.Right];
+        let moves = [];
+        if (state.x > 0 && this._isWalkable(map[state.z][state.x-1][state.y]))
+            moves.push(MoveDirections.Left)
+        if (state.x+1 < map[0].length && this._isWalkable(map[state.z][state.x+1][state.y]))
+            moves.push(MoveDirections.Right)
+        if (state.y > 0 && this._isWalkable(map[state.z][state.x][state.y-1]))
+            moves.push(MoveDirections.Up)
+        if (state.y+1 < map[0][0].length && this._isWalkable(map[state.z][state.x][state.y+1]))
+            moves.push(MoveDirections.Down)
+
+        return moves;
+    }
+
+    private _isWalkable(tile: FloorType)
+    {
+        if (tile === FloorType.Void || tile === FloorType.Wall)
+            return false;
+        return true;
     }
 
     /**

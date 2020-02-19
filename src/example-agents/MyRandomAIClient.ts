@@ -1,4 +1,4 @@
-import { ScenarioData, AIClient, GameModel, CommandFactory, Command } from "../lib/fuseblade/gameserver/index";
+import { ScenarioData, AIClient, GameModel, CommandFactory, Command } from "../../lib/fuseblade/gameserver/index";
 
 export class MyRandomAIClient<D extends ScenarioData<S>, S, C> implements AIClient<D,S,C>
 {

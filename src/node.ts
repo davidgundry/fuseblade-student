@@ -1,5 +1,5 @@
 const sf = require("../lib/fuseblade/fusebladeNode");
-import { MyRandomAIClient } from "MyRandomAIClient";
+import { MyRandomAIClient } from "example-agents/MyRandomAIClient";
 import ScenarioFactory from "../lib/fuseblade/gameserver/index";
 import { defaultSaveData } from "../lib/fuseblade/defaultSaveData";
 

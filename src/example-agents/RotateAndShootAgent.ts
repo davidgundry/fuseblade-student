@@ -1,10 +1,10 @@
-import { AIClient, Command } from "../lib/fuseblade/gameserver/index"
-import { FBScenarioData } from "../lib/fuseblade/gamemodel/data/FBScenarioData";
-import { FBSaveData } from "../lib/fuseblade/gamemodel/save/FBSaveData";
-import { FBActions } from "FBActions";
-import { FBGameModel } from "../lib/fuseblade/gamemodel/model/FBGameModel";
-import { FBCommandFactory } from "../lib/fuseblade/gamemodel/FBCommandFactory";
-import ProjectileData from "../lib/fuseblade/gamemodel/data/ProjectileData";
+import { AIClient, Command } from "../../lib/fuseblade/gameserver/index"
+import { FBScenarioData } from "../../lib/fuseblade/gamemodel/data/FBScenarioData";
+import { FBSaveData } from "../../lib/fuseblade/gamemodel/save/FBSaveData";
+import { FBActions } from "enums/FBActions";
+import { FBGameModel } from "../../lib/fuseblade/gamemodel/model/FBGameModel";
+import { FBCommandFactory } from "../../lib/fuseblade/gamemodel/FBCommandFactory";
+import ProjectileData from "../../lib/fuseblade/gamemodel/data/ProjectileData";
 
 /**
  * A simple AI controlling one agent that spins around and shoots constantly.

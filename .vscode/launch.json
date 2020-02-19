@@ -17,7 +17,7 @@
             "name": "Launch Chromium",
             "url": "http://localhost:8080/",
             "webRoot": "${workspaceFolder}",
-            "runtimeExecutable": "/usr/bin/chromium"
+            //"runtimeExecutable": "/usr/bin/chromium"
         },/*
         {
             "type": "node",
