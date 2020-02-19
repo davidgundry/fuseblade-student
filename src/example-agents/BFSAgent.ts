@@ -1,26 +1,27 @@
-import { AIClient } from "../../lib/fuseblade/gameserver/index";
+import { AIClient, Command } from "../../lib/fuseblade/gameserver/index";
 import { FBScenarioData } from "../../lib/fuseblade/gamemodel/data/FBScenarioData";
 import { FBSaveData } from "../../lib/fuseblade/gamemodel/save/FBSaveData";
-import { FBActions } from "../enums/FBActions";
 import { FBGameModel } from "../../lib/fuseblade/gamemodel/model/FBGameModel";
 import { FBCommandFactory } from "../../lib/fuseblade/gamemodel/FBCommandFactory";
-import { FloorType } from "../enums/FloorType";
 import { FBCommand } from "../../lib/fuseblade/gamemodel/FBCommand";
 import { AgentData } from "../../lib/fuseblade/gamemodel/data/AgentData";
+import { FBActions } from "../../lib/fuseblade/gamemodel/FBActions";
+import { FloorType } from "../../lib/fuseblade/gamemodel/data/FloorType";
 
 /**
- * The beginnings of a breadth-first search agent which plans a path to the player
- * to demonstrate the BFS algorithm.
- * 
- * It does not currently consult the level map to determine what actions it can take
- * or what happens when it takes them.
+ * A breadth-first search agent which plans a path to the player to demonstrate
+ * the BFS algorithm.
  */
 export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
 {
     private _team: number;
     private _pathfindingDone: boolean = false;
-    private _plan: GridPos[];
-    private _planIndex: number;
+    private _waypoints: GridPos[];
+    private _waypointsIndex: number;
+    private _snappingRange: number; 
+    private readonly _maxIterations = 1000; // The maximum iterations of BFS we will
+    // do before giving up
+    private _planningTime: number; // A weighted average of time taken to do pathfinding
 
     /**
      * The create function is called when the scenario is created, and supplies some
@@ -50,80 +51,125 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
      */
     update(data: FBScenarioData, commandFactory: FBCommandFactory, delta: number): FBCommand[] | FBCommand
     {
-        let me = data.teams[this._team].agents[0];
+        let commands: FBCommand[] = null;
 
+        // Get the 0th agent of our team to control. If we have other agents,
+        // they are ignored.
+        let me: AgentData = data.teams[this._team].agents[0];
+
+        // Update our snapping range so that we can get as close as possible to
+        // the exact point without the risk of overshooting. 
+        this._snappingRange = delta * me.speed;
+
+        // If we have pathfinding to do, then update the waypoints with our new
+        // path and set the index of our current waypoint to the first one.
         if (!this._pathfindingDone)
         {
-            let target = data.player();
-            let currentPos = new GridPos(Math.floor(me.x),Math.floor(me.y),Math.floor(me.z));
-            let goal = new GridPos(Math.floor(target.x),Math.floor(target.y),Math.floor(target.z));
-            console.log("Pathfinding from", currentPos, "to", goal)
-            let directions = this._breadthFirstSearch(currentPos, goal, data.map);
-            this._plan = this._createPlan(directions, currentPos, goal)
-            console.log(this._plan)
-            this._planIndex = this._plan.length-1;
+            this._waypoints = this._doPathfinding(me, data.player(), data.map);
+            this._waypointsIndex = 0;
+            this._pathfindingDone = true;
         }
-        this._pathfindingDone = true;
 
-        if (this._planIndex > -1)
+        // If we are following a plan, then check if we've reached our next waypoint.
+        // If so, we move to the next one. If not, we get commands to move us towards
+        // our current waypoint.
+        if (this._waypoints && this._waypointsIndex < this._waypoints.length)
         {
-            let mDistanceToPoint = Math.abs(me.x - this._plan[this._planIndex].x) +  Math.abs(me.y - this._plan[this._planIndex].y)
-            if (mDistanceToPoint > 0.1)
-                return this._moveTowardsPoint(me, this._plan[this._planIndex], commandFactory);
-            else
-            {
-                this._planIndex--;
-                console.log("moving to", this._plan[this._planIndex]);
-            }
+            let maxDist = Math.max(Math.abs(me.x - this._waypoints[this._waypointsIndex].x) , Math.abs(me.y -this._waypoints[this._waypointsIndex].y))
+            if (maxDist <= this._snappingRange)
+                this._waypointsIndex++;
+            if (this._waypointsIndex < this._waypoints.length)
+                commands = this._moveTowardsPoint(me, this._waypoints[this._waypointsIndex], commandFactory);           
         }
+        // If we're not following a plan, flag that we need to generate a new one.
+        // Because we set this only on completing a plan, we will always go to where
+        // the player _was_ when creating the plan, not necessarily where they are now.
         else
-        {
             this._pathfindingDone = false;
-        }
-        return null;
+
+        // Return the commands we have picked for this update.
+        return commands;
     }
-    
-    private _moveTowardsPoint(me: AgentData, point: GridPos, commandFactory: FBCommandFactory)
+
+    scenarioEnded(data: FBScenarioData): void {}
+
+    /**
+     * Run the pathfinder and generate a plan of waypoints to follow to move the 
+     * provided agent (me) to the target (target). If we cannot find a plan, after
+     * the maximum iterations then we return null.
+     * @param data 
+     */
+    private _doPathfinding(me: AgentData, target: AgentData, map: FloorType[][][]): GridPos[]
     {
+        let start = performance.now();
+        let currentCell: GridPos = new GridPos(Math.floor(me.x),Math.floor(me.y),Math.floor(me.z));
+        let goalCell: GridPos = new GridPos(Math.floor(target.x),Math.floor(target.y),Math.floor(target.z));
+        let directions: MoveDirections[] = this._breadthFirstSearch(currentCell, goalCell, map);
+        let plan: GridPos[] = null;
+        if (directions && directions.length > 0)
+            plan = this._createWaypoints(directions, new GridPos(me.x,me.y,me.z));
+
+        let end = performance.now();
+        let alpha = 0.9
+        if (this._planningTime === undefined)
+            this._planningTime = end-start;
+        else
+            this._planningTime = this._planningTime*alpha + (end-start)*(1-alpha);
+
+        return plan;
+    }
+
+    /**
+     * Returns the next command(s) for moving an agent to the provided point. Here we
+     * check whether each dimension of the point is within "snapping" range. If so,
+     * we don't move any closer in that dimension to avoid overshooting and appearing
+     * to vibrate either side of the target.
+     * @param me 
+     * @param point 
+     * @param commandFactory 
+     */
+    private _moveTowardsPoint(me: AgentData, point: GridPos, commandFactory: FBCommandFactory): FBCommand[]
+    {
+        let padding = this._snappingRange;
         let moves: Array<FBCommand> = [];
-        if (me.x < point.x)
+        if (point.x - me.x > padding)
             moves.push(commandFactory.getCommand(FBActions.AgentMoveEast))
-        else if (me.x > point.x)
+        else if (me.x - point.x > padding)
             moves.push(commandFactory.getCommand(FBActions.AgentMoveWest))
-        if (me.y < point.y)
+        if (point.y - me.y > padding)
             moves.push(commandFactory.getCommand(FBActions.AgentMoveSouth))
-        else if (me.y > point.y)
+        else if (me.y - point.y > padding)
             moves.push(commandFactory.getCommand(FBActions.AgentMoveNorth))
         return moves;
     }
 
-    private _createPlan(directions: MoveDirections[], start: GridPos, goal: GridPos): GridPos[]
+    /**
+     * Here we take a plan generated by our search and convert it into a series of waypoints
+     * in world space. These waypoints are easy to follow, as we just move towards the next
+     * one until we reach it.
+     * @param directions The array of directions to create waypoints from
+     * @param start The starting position of our agent, so we can work out the agent's
+     * grid position and use it as a starting point for the plan.
+     */
+    private _createWaypoints(directions: MoveDirections[], start: GridPos): GridPos[]
     {
         let plan = [];
-        plan.push(goal);
-        plan.push(this._localise(goal));
+        plan.push(new GridPos(Math.floor(start.x)+0.5, Math.floor(start.y)+0.5, start.z));
         for (let i=0;i<directions.length;i++)
         {
             let last = plan[plan.length-1];
             if (directions[i] === MoveDirections.Up)
-                plan.push(new GridPos(last.x, last.y+1, last.z));
-            if (directions[i] === MoveDirections.Down)
                 plan.push(new GridPos(last.x, last.y-1, last.z));
+            if (directions[i] === MoveDirections.Down)
+                plan.push(new GridPos(last.x, last.y+1, last.z));
             if (directions[i] === MoveDirections.Left)
-                plan.push(new GridPos(last.x+1, last.y, last.z));
-            if (directions[i] === MoveDirections.Right)
                 plan.push(new GridPos(last.x-1, last.y, last.z));
+            if (directions[i] === MoveDirections.Right)
+                plan.push(new GridPos(last.x+1, last.y, last.z));
         }
-        plan.push(this._localise(start))
+        
         return plan;
     }
-
-    private _localise(pos: GridPos): GridPos
-    {
-        return new GridPos(Math.floor(pos.x)+0.5, Math.floor(pos.y)+0.5, pos.z)
-    }
-
-    scenarioEnded(data: FBScenarioData): void {}
 
     /**
      * This is a generic breadth-first search function slightly adapted to the
@@ -149,15 +195,13 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
         let closedList = [];
         openList.push(new TreeNode<GridPos, MoveDirections>(initialState, null, null));
         let iterations: number = 0;
-        while (openList.length > 0 && iterations < 1000)
+        while (openList.length > 0 && iterations < this._maxIterations)
         {
             iterations++;
             let current = openList.shift();
             if (this._goalTest(current.state, goal))
-            {
-                console.log(iterations);
                 return this._getActions(current);
-            }
+
             let edges = this._stateActionMapping(map, current.state);
             for (let i=0;i<edges.length;i++)
             {
@@ -216,17 +260,29 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
     {
         let moves = [];
         if (state.x > 0 && this._isWalkable(map[state.z][state.x-1][state.y]))
-            moves.push(MoveDirections.Left)
+            moves.push(MoveDirections.Left);
+
         if (state.x+1 < map[0].length && this._isWalkable(map[state.z][state.x+1][state.y]))
-            moves.push(MoveDirections.Right)
+            moves.push(MoveDirections.Right);
+
         if (state.y > 0 && this._isWalkable(map[state.z][state.x][state.y-1]))
-            moves.push(MoveDirections.Up)
+            moves.push(MoveDirections.Up);
+        else if ((state.z+1 < map.length) && (map[state.z+1][state.x][state.y] === FloorType.StepsDown))
+            moves.push(MoveDirections.Up);
+
         if (state.y+1 < map[0][0].length && this._isWalkable(map[state.z][state.x][state.y+1]))
-            moves.push(MoveDirections.Down)
+            moves.push(MoveDirections.Down);
+        else if (map[state.z][state.x][state.y] === FloorType.StepsDown)
+            moves.push(MoveDirections.Down);
 
         return moves;
     }
 
+    /**
+     * Returns whether or not a particular tile is walkable. The game won't let
+     * us walk on certain tiles, so we need to make sure this reflects that.
+     * @param tile 
+     */
     private _isWalkable(tile: FloorType)
     {
         if (tile === FloorType.Void || tile === FloorType.Wall)
@@ -245,12 +301,20 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
      */
     private _transitionModel(state: GridPos, action: MoveDirections, map: FloorType[][][])
     {
-         //TODO: check map and change z when going up or down steps
         let s = new GridPos(state.x, state.y, state.z);
+
         if (action === MoveDirections.Up)
+        {
+            if ((state.z+1 < map.length) && (map[state.z+1][state.x][state.y] === FloorType.StepsDown))
+                s.z++;
             s.y--;
+        }
         else if (action === MoveDirections.Down)
+        {
+            if (map[state.z][state.x][state.y] === FloorType.StepsDown)
+                s.z--;
             s.y++;
+        }
         else if (action === MoveDirections.Left)
             s.x--;
         else if (action === MoveDirections.Right)
@@ -272,12 +336,11 @@ export class BFSAgent implements AIClient<FBScenarioData,FBSaveData,FBActions>
         let actions = []
         while (node.parent)
         {
-            actions.push(node.action)
+            actions.unshift(node.action)
             node = node.parent;
         }
         return actions;
     }
-
 }
 
 /**
