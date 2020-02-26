@@ -1,11 +1,10 @@
 const sf = require("../lib/fuseblade/fusebladeWeb");
 import ScenarioFactory from "../lib/fuseblade/gameserver/index";
-import { defaultSaveData } from "../lib/fuseblade/defaultSaveData";
-import { BFSAgent } from "example-agents/BFSAgent";
-import { TurretAgent } from "example-agents/TurretAgent";
+import { MyAgent } from "behaviour-agent/MyAgent";
+import {mySaveData } from "behaviour-agent/saveData"
 
 let factory: ScenarioFactory = new sf.default()
-let scenario = factory.createFusebladeScenario(defaultSaveData);
-scenario.addAITeam(new BFSAgent());
-scenario.addAITeam(new TurretAgent());
+let scenario = factory.createFusebladeScenario(mySaveData);
+scenario.addAITeam(new MyAgent());
+//scenario.addAITeam(new TurretAgent());
 window["FBScenario"] = scenario;
